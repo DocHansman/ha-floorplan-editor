@@ -7,7 +7,7 @@ COPY dist-card/ ./dist-card/
 COPY server/ ./server/
 
 WORKDIR /app/server
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 WORKDIR /app
 
