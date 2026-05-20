@@ -8,7 +8,8 @@ function stripModuleType(): import('vite').Plugin {
     transformIndexHtml(html: string) {
       return html
         .replace(/type="module"\s*/g, '')
-        .replace(/\s*crossorigin/g, '');
+        .replace(/\s*crossorigin/g, '')
+        .replace(/<script src=/g, '<script defer src=');
     },
   };
 }
