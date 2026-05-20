@@ -2,16 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy built frontend assets
-COPY src/dist/ ./dist/
-
-# Copy card bundle (published to /config/www/ on demand via the Publish button)
-COPY ../card/dist/ ./dist-card/
-
-# Copy server files
+COPY dist/ ./dist/
+COPY dist-card/ ./dist-card/
 COPY server/ ./server/
 
-# Install server dependencies
 WORKDIR /app/server
 RUN npm ci --only=production
 

@@ -1,6 +1,4 @@
 node_modules/
-dist/
-addon/dist/
 .env
 *.local
 .claude/
