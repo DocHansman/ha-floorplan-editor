@@ -17,4 +17,4 @@ panel_icon: mdi:floor-plan
 panel_title: Floorplan Editor
 homeassistant_api: true
 map:
-  - config/www/floorplan-editor:rw
+  - config:rw
