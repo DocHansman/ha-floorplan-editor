@@ -1,0 +1,17 @@
+{
+  "name": "ha-floorplan-editor",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "addon/src",
+    "addon/server",
+    "card"
+  ],
+  "scripts": {
+    "dev:ui": "npm run dev --workspace=addon/src",
+    "dev:server": "npm run dev --workspace=addon/server",
+    "build:ui": "npm run build --workspace=addon/src",
+    "build:card": "npm run build --workspace=card",
+    "typecheck": "npm run typecheck --workspace=addon/src && npm run typecheck --workspace=card"
+  }
+}

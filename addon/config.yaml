@@ -1,0 +1,18 @@
+name: "Floorplan Editor"
+description: "WYSIWYG editor for HA floorplan dashboards"
+version: "1.0.0"
+slug: "floorplan_editor"
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:floor-plan
+panel_title: Floorplan Editor
+homeassistant_api: true
+map:
+  - config/www/floorplan-editor:rw
