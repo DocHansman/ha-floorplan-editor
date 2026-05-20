@@ -1,4 +1,5 @@
 import type { Project } from '../types/project';
+import { ingressBase } from './ingressBase';
 
 export interface ProjectSummary {
   id: string;
@@ -9,20 +10,20 @@ export interface ProjectSummary {
 }
 
 export async function listProjects(): Promise<ProjectSummary[]> {
-  const res = await fetch('/api/projects');
+  const res = await fetch(`${ingressBase}/api/projects`);
   if (!res.ok) throw new Error(`Failed to list projects: ${res.status}`);
   return res.json() as Promise<ProjectSummary[]>;
 }
 
 export async function loadProject(id: string): Promise<Project> {
-  const res = await fetch(`/api/projects/${id}`);
+  const res = await fetch(`${ingressBase}/api/projects/${id}`);
   if (!res.ok) throw new Error(`Failed to load project: ${res.status}`);
   return res.json() as Promise<Project>;
 }
 
 export async function saveProject(project: Project): Promise<void> {
   const payload: Project = { ...project, updatedAt: new Date().toISOString() };
-  const res = await fetch(`/api/projects/${project.id}`, {
+  const res = await fetch(`${ingressBase}/api/projects/${project.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -31,7 +32,7 @@ export async function saveProject(project: Project): Promise<void> {
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${ingressBase}/api/projects/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`Failed to delete project: ${res.status}`);
 }
 
