@@ -17,8 +17,17 @@ export class HaWebSocketClient {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const wsUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/ha`;
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      // When served via HA Ingress the pathname is /api/hassio_ingress/<token>/...
+      // We need to prepend that base so the WS request goes through ingress.
+      const ingressMatch = location.pathname.match(/^(\/api\/hassio_ingress\/[^/]+)/);
+      const base = ingressMatch ? ingressMatch[1] : '';
+      const wsUrl = `${proto}://${location.host}${base}/ws/ha`;
       this.ws = new WebSocket(wsUrl);
+
+      this.ws.onopen = () => {
+        // Wait for auth_ok from server before resolving
+      };
 
       this.ws.onmessage = (event) => {
         const msg: WsMessage = JSON.parse(event.data as string);
@@ -69,7 +78,10 @@ export class HaWebSocketClient {
       if (event.event.event_type === 'state_changed') {
         const data = event.event.data as { entity_id: string; new_state: unknown };
         if (data.new_state) {
-          this.entities = { ...this.entities, [data.entity_id]: data.new_state as never };
+          this.entities = {
+            ...this.entities,
+            [data.entity_id]: data.new_state as never,
+          };
         } else {
           const next = { ...this.entities };
           delete next[data.entity_id];
@@ -90,17 +102,24 @@ export class HaWebSocketClient {
     const id = this.msgId++;
     return new Promise((resolve, reject) => {
       this.pendingRequests.set(id, (result) => {
-        if (result.success) resolve(result.result as T);
-        else reject(new Error(`WS call failed: ${JSON.stringify(result)}`));
+        if (result.success) {
+          resolve(result.result as T);
+        } else {
+          reject(new Error(`WS call failed: ${JSON.stringify(result)}`));
+        }
       });
       this.send({ ...msg, id });
     });
   }
 
   async getStates(): Promise<HassEntities> {
-    const states = await this.call<Array<{ entity_id: string } & object>>({ type: 'get_states' });
+    const states = await this.call<Array<{ entity_id: string } & object>>({
+      type: 'get_states',
+    });
     const map: HassEntities = {};
-    for (const s of states) map[s.entity_id] = s as never;
+    for (const s of states) {
+      map[s.entity_id] = s as never;
+    }
     this.entities = map;
     this.notifyStateListeners();
     return map;
@@ -129,7 +148,10 @@ export class HaWebSocketClient {
   }
 
   disconnect() {
-    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.ws?.close();
   }
 }
