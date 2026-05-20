@@ -1,5 +1,7 @@
 # HA Floorplan Editor
 
+> ⚠️ **Early Alpha** — This project is in active development. Expect bugs, missing features, and breaking changes between versions. Not recommended for production use yet.
+
 A WYSIWYG editor for Home Assistant that lets you draw interactive floorplans and display live device states directly on your dashboard.
 It ships as two components: a **Docker Add-on** (the editor) and a **Custom Lovelace Card** (the viewer).
 
@@ -10,7 +12,7 @@ It ships as two components: a **Docker Add-on** (the editor) and a **Custom Love
 ### Add-on (Editor)
 
 1. In Home Assistant go to **Settings → Add-ons → Add-on Store → ⋮ → Repositories**
-2. Add the repository URL: `https://github.com/DocHansman/ha-floorplan-editor`
+2. Add the repository URL: `https://github.com/your-username/ha-floorplan-editor`
 3. Install **Floorplan Editor** from the store
 4. Start the add-on and open it via the sidebar
 
@@ -37,21 +39,25 @@ It ships as two components: a **Docker Add-on** (the editor) and a **Custom Love
 6. Click **Publish** → the editor saves the project and creates a Lovelace dashboard for you
 7. Open the generated dashboard — your floorplan is live
 
+[Screenshot]
+
 ---
 
 ## Card Configuration Reference
 
 ```yaml
 type: custom:floorplan-editor-card
-project: /local/floorplan-editor/<project-id>.json   # required
-show_labels: true
-dim_inactive: false
-accent_color: "#3b82f6"
+project: /local/floorplan-editor/<project-id>.json   # required — path to project JSON
+show_labels: true        # boolean, default true  — show room name labels
+dim_inactive: false      # boolean, default false — dim rooms with no active devices
+accent_color: "#3b82f6"  # CSS color, default #3b82f6 — highlight / active color
 summary:
-  lights: light.all_lights
-  windows: binary_sensor.fenster
-  temperature: sensor.wohnung_temp
+  lights: light.all_lights          # entity_id for light count in summary bar
+  windows: binary_sensor.fenster    # entity_id for open window count
+  temperature: sensor.wohnung_temp  # entity_id for temperature display
 ```
+
+All options (except `project`) can also be changed at runtime via the **⚙ tweaks panel** (gear icon, bottom-right of the card). Settings are stored per-project in `localStorage`.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
@@ -69,6 +75,6 @@ summary:
 
 - **Single floor only** — multi-floor support (tab switching) is planned for a future release
 - **No label tool yet** — free-text labels on the canvas are not yet implemented
-- **Card bundle size** — the card JS is ~483 KB (152 KB gzip) due to bundled React
-- **Background images are editor-only** — not shown in the card view
+- **Card bundle size** — the card JS is ~483 KB (152 KB gzip) due to bundled React; this is normal for React-based Lovelace cards
+- **Background images are editor-only** — the reference image you upload while drawing is not shown in the card view
 - **Ingress required** — the editor add-on uses HA Ingress; direct port access is not supported
