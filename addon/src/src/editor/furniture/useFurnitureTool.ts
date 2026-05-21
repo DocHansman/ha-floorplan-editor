@@ -9,10 +9,22 @@ export function useFurnitureTool(stageRef: RefObject<Konva.Stage | null>) {
   const { addElement, commitHistory, stageX, stageY, stageScale } = useEditorStore();
 
   function handleClick(_e: Konva.KonvaEventObject<MouseEvent>) {
-    const stage = stageRef.current; if (!stage) return;
-    const pos = stage.getPointerPosition(); if (!pos) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
     const { x: cx, y: cy } = stageToCanvas(pos.x, pos.y, stageX, stageY, stageScale);
-    const el: FurnitureElement = { type: 'furniture', id: crypto.randomUUID(), symbol: selectedSymbol, x: cx, y: cy, width: 80, height: 80, rotation: 0 };
+
+    const el: FurnitureElement = {
+      type: 'furniture',
+      id: crypto.randomUUID(),
+      symbol: selectedSymbol,
+      x: cx,
+      y: cy,
+      width: 80,
+      height: 80,
+      rotation: 0,
+    };
     addElement(el);
     commitHistory();
   }

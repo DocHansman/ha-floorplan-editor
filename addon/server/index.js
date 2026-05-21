@@ -24,7 +24,7 @@ app.use(express.json({ limit: '10mb' }));
 // Serve static frontend build
 app.use(express.static('/app/dist'));
 
-// ── REST proxy to HA ─────────────────────────────────────────────
+// ── REST proxy to HA ──────────────────────────────────────────────────────────
 
 app.use('/api/ha', async (req, res) => {
   const targetPath = req.path.replace(/^\/api\/ha/, '');
@@ -48,7 +48,7 @@ app.use('/api/ha', async (req, res) => {
   }
 });
 
-// ── Project file CRUD ────────────────────────────────────────────────
+// ── Project file CRUD ─────────────────────────────────────────────────────────
 
 app.get('/api/projects', async (_req, res) => {
   try {
@@ -112,8 +112,10 @@ app.delete('/api/projects/:id', async (req, res) => {
   }
 });
 
-// ── Publish / Dashboard helpers ─────────────────────────────────────────────
+// ── Publish / Dashboard helpers ───────────────────────────────────────────────
 
+// GET /api/addon/check-card-resource
+// Returns { fileExists, resourceRegistered, resourceUrl }
 app.get('/api/addon/check-card-resource', async (_req, res) => {
   const resourceUrl = '/local/floorplan-editor-card.js';
   const fileExists = existsSync(CARD_JS_DEST);
@@ -133,6 +135,8 @@ app.get('/api/addon/check-card-resource', async (_req, res) => {
   res.json({ fileExists, resourceRegistered, resourceUrl });
 });
 
+// POST /api/addon/publish-project
+// Body: { project }  — writes JSON + copies card.js to /config/www/
 app.post('/api/addon/publish-project', async (req, res) => {
   const { project } = req.body ?? {};
   if (!project?.id) return res.status(400).json({ error: 'project required' });
@@ -141,9 +145,11 @@ app.post('/api/addon/publish-project', async (req, res) => {
     await mkdir(PROJECT_DIR, { recursive: true });
     await mkdir(WWW_DIR, { recursive: true });
 
+    // Write project JSON
     const filePath = `${PROJECT_DIR}/${project.id}.json`;
     await writeFile(filePath, JSON.stringify(project, null, 2), 'utf-8');
 
+    // Copy card JS bundle
     if (existsSync(CARD_JS_SRC)) {
       await copyFile(CARD_JS_SRC, CARD_JS_DEST);
     } else {
@@ -156,6 +162,9 @@ app.post('/api/addon/publish-project', async (req, res) => {
   }
 });
 
+// POST /api/addon/create-dashboard
+// Body: { projectId, projectName, title }
+// Registers resource (if needed) + creates Lovelace dashboard
 app.post('/api/addon/create-dashboard', async (req, res) => {
   const { projectId, projectName, title } = req.body ?? {};
   if (!projectId) return res.status(400).json({ error: 'projectId required' });
@@ -167,6 +176,7 @@ app.post('/api/addon/create-dashboard', async (req, res) => {
     : projectId;
 
   try {
+    // 1. Ensure resource is registered
     const resListR = await fetch(`${HA_BASE_URL}/api/lovelace/resources`, {
       headers: { Authorization: `Bearer ${SUPERVISOR_TOKEN}` },
     });
@@ -185,18 +195,23 @@ app.post('/api/addon/create-dashboard', async (req, res) => {
       });
     }
 
+    // 2. Create Lovelace dashboard
     const dashConfig = {
       title: dashTitle,
-      views: [{
-        title: 'Floorplan',
-        path: 'floorplan',
-        cards: [{
-          type: 'custom:floorplan-editor-card',
-          project: `/local/floorplan-editor/${projectId}.json`,
-          show_labels: true,
-          dim_inactive: false,
-        }],
-      }],
+      views: [
+        {
+          title: 'Floorplan',
+          path: 'floorplan',
+          cards: [
+            {
+              type: 'custom:floorplan-editor-card',
+              project: `/local/floorplan-editor/${projectId}.json`,
+              show_labels: true,
+              dim_inactive: false,
+            },
+          ],
+        },
+      ],
     };
 
     const createR = await fetch(`${HA_BASE_URL}/api/lovelace/dashboards`, {
@@ -217,11 +232,13 @@ app.post('/api/addon/create-dashboard', async (req, res) => {
 
     if (!createR.ok) {
       const err = await createR.text();
+      // 409 = already exists — treat as success
       if (createR.status !== 409) {
         return res.status(502).json({ error: `HA error ${createR.status}: ${err}` });
       }
     }
 
+    // 3. Save view config to the dashboard
     await fetch(`${HA_BASE_URL}/api/lovelace/config?dashboard_id=${urlPath}`, {
       method: 'POST',
       headers: {
@@ -237,14 +254,20 @@ app.post('/api/addon/create-dashboard', async (req, res) => {
   }
 });
 
-// ── WebSocket bridge to HA ───────────────────────────────────────────────
+// ── WebSocket bridge to HA ────────────────────────────────────────────────────
+// The browser connects here; we forward to HA WS API with the Supervisor token.
 
 app.ws('/ws/ha', (clientWs) => {
   let haWs = null;
   let authenticated = false;
+  // Buffer messages from client until HA auth completes
   const pendingMessages = [];
 
   haWs = new WebSocket(HA_WS_URL);
+
+  haWs.on('open', () => {
+    // HA sends auth_required first, we respond with auth automatically
+  });
 
   haWs.on('message', (data) => {
     const msg = JSON.parse(data.toString());
@@ -256,8 +279,12 @@ app.ws('/ws/ha', (clientWs) => {
 
     if (msg.type === 'auth_ok') {
       authenticated = true;
-      for (const m of pendingMessages) haWs.send(m);
+      // Forward buffered messages
+      for (const m of pendingMessages) {
+        haWs.send(m);
+      }
       pendingMessages.length = 0;
+      // Notify client that connection is ready
       clientWs.send(JSON.stringify({ type: 'auth_ok' }));
       return;
     }
@@ -268,22 +295,41 @@ app.ws('/ws/ha', (clientWs) => {
       return;
     }
 
+    // Forward all other messages to browser
     if (clientWs.readyState === WebSocket.OPEN) {
       clientWs.send(data.toString());
     }
   });
 
-  haWs.on('close', () => { if (clientWs.readyState === WebSocket.OPEN) clientWs.close(); });
-  haWs.on('error', (err) => { console.error('HA WebSocket error:', err); if (clientWs.readyState === WebSocket.OPEN) clientWs.close(); });
-
-  clientWs.on('message', (data) => {
-    if (!authenticated) { pendingMessages.push(data.toString()); return; }
-    if (haWs.readyState === WebSocket.OPEN) haWs.send(data.toString());
+  haWs.on('close', () => {
+    if (clientWs.readyState === WebSocket.OPEN) clientWs.close();
   });
 
-  clientWs.on('close', () => { if (haWs.readyState === WebSocket.OPEN) haWs.close(); });
+  haWs.on('error', (err) => {
+    console.error('HA WebSocket error:', err);
+    if (clientWs.readyState === WebSocket.OPEN) clientWs.close();
+  });
+
+  clientWs.on('message', (data) => {
+    if (!authenticated) {
+      pendingMessages.push(data.toString());
+      return;
+    }
+    if (haWs.readyState === WebSocket.OPEN) {
+      haWs.send(data.toString());
+    }
+  });
+
+  clientWs.on('close', () => {
+    if (haWs.readyState === WebSocket.OPEN) haWs.close();
+  });
 });
 
-app.get('*', (_req, res) => { res.sendFile('/app/dist/index.html'); });
+// SPA fallback
+app.get('*', (_req, res) => {
+  res.sendFile('/app/dist/index.html');
+});
 
-server.listen(PORT, () => { console.log(`Floorplan Editor server listening on port ${PORT}`); });
+server.listen(PORT, () => {
+  console.log(`Floorplan Editor server listening on port ${PORT}`);
+});

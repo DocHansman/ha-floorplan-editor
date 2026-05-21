@@ -10,9 +10,13 @@ export default defineConfig({
       fileName: () => 'floorplan-editor-card.js',
       formats: ['iife'],
     },
-    rollupOptions: { external: [] },
+    rollupOptions: {
+      // Bundle everything — HA loads the card as a standalone resource
+      external: [],
+    },
     outDir: 'dist',
     emptyOutDir: true,
+    // Suppress the chunk-size warning; we know the bundle is large
     chunkSizeWarningLimit: 600,
   },
 });

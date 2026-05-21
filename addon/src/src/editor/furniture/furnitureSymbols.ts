@@ -1,6 +1,26 @@
-import { mdiSofa, mdiBed, mdiTableFurniture, mdiDesk, mdiBathtub, mdiToilet, mdiShower, mdiWashingMachine, mdiTelevision, mdiFlower } from '@mdi/js';
+// MDI SVG paths for furniture symbols (24×24 viewBox).
+// mdi:sofa, mdi:bed, mdi:table-furniture, mdi:desk, mdi:bathtub,
+// mdi:toilet, mdi:shower, mdi:washing-machine, mdi:television, mdi:flower
+import {
+  mdiSofa,
+  mdiBed,
+  mdiTableFurniture,
+  mdiDesk,
+  mdiBathtub,
+  mdiToilet,
+  mdiShower,
+  mdiWashingMachine,
+  mdiTelevision,
+  mdiFlower,
+} from '@mdi/js';
 
-export interface FurnitureSymbol { id: string; label: string; path: string; defaultWidth: number; defaultHeight: number; }
+export interface FurnitureSymbol {
+  id: string;
+  label: string;
+  path: string;
+  defaultWidth: number;
+  defaultHeight: number;
+}
 
 export const FURNITURE_SYMBOLS: FurnitureSymbol[] = [
   { id: 'sofa',            label: 'Sofa',            path: mdiSofa,           defaultWidth: 120, defaultHeight: 60 },
@@ -15,4 +35,6 @@ export const FURNITURE_SYMBOLS: FurnitureSymbol[] = [
   { id: 'plant',           label: 'Plant',           path: mdiFlower,         defaultWidth: 45,  defaultHeight: 45 },
 ];
 
-export function getSymbol(id: string): FurnitureSymbol | undefined { return FURNITURE_SYMBOLS.find((s) => s.id === id); }
+export function getSymbol(id: string): FurnitureSymbol | undefined {
+  return FURNITURE_SYMBOLS.find((s) => s.id === id);
+}

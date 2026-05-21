@@ -8,6 +8,8 @@ export interface HassEntity {
 
 export type HassEntities = Record<string, HassEntity>;
 
+// ── WebSocket message types ───────────────────────────────────────────────────
+
 export interface WsAuthOk {
   type: 'auth_ok';
 }

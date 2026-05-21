@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Map HA CSS custom properties → editor CSS vars.
+  When running inside HA Ingress these HA vars are set by the active theme.
+  Fallbacks match the original dark palette so standalone dev still works.
+*/
 :root {
   --fpeditor-bg:      var(--ha-card-background,    #111827);
   --fpeditor-surface: var(--card-background-color,  #1f2937);

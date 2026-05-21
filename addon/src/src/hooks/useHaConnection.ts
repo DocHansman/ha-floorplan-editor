@@ -26,9 +26,14 @@ export function useHaConnection() {
         setError(err.message);
       });
 
-    const unsub = haClient.onStateChange((e) => { if (!cancelled) setEntities(e); });
+    const unsub = haClient.onStateChange((e) => {
+      if (!cancelled) setEntities(e);
+    });
 
-    return () => { cancelled = true; unsub(); };
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, []);
 
   return { state, error, entities };
