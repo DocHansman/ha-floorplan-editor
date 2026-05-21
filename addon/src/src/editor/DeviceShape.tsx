@@ -64,7 +64,10 @@ export function DeviceShape({ marker, isSelected, onSelect, onDoubleClick }: Pro
 
   function handleDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
     const node = e.target as Konva.Group;
-    updateElement(marker.id, { x: node.x(), y: node.y() });
+    const newX = node.x();
+    const newY = node.y();
+    node.position({ x: marker.x, y: marker.y }); // reset before React re-render
+    updateElement(marker.id, { x: newX, y: newY });
     commitHistory();
   }
 
