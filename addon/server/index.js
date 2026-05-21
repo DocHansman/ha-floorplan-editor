@@ -176,13 +176,22 @@ app.post('/api/addon/create-dashboard', async (req, res) => {
     : projectId;
 
   try {
+    if (!SUPERVISOR_TOKEN) {
+      return res.status(500).json({ error: 'SUPERVISOR_TOKEN not set — add homeassistant_api: true and auth_api: true to config.yaml' });
+    }
+
     // 1. Ensure resource is registered
     const resListR = await fetch(`${HA_BASE_URL}/api/lovelace/resources`, {
       headers: { Authorization: `Bearer ${SUPERVISOR_TOKEN}` },
     });
-    const resources = resListR.ok ? await resListR.json() : [];
-    const alreadyRegistered = Array.isArray(resources) &&
-      resources.some((x) => x.url === resourceUrl);
+    console.log('HA resources status:', resListR.status);
+    if (!resListR.ok) {
+      const body = await resListR.text();
+      console.error('HA resources error:', body.slice(0, 200));
+      return res.status(502).json({ error: `HA auth failed (${resListR.status}) — check SUPERVISOR_TOKEN` });
+    }
+    const resources = await resListR.json();
+    const alreadyRegistered = Array.isArray(resources) && resources.some((x) => x.url === resourceUrl);
 
     if (!alreadyRegistered) {
       await fetch(`${HA_BASE_URL}/api/lovelace/resources`, {
