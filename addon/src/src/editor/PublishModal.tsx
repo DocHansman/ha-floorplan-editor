@@ -22,6 +22,7 @@ export function PublishModal({ project, onSave, onClose }: Props) {
   const [dashTitle, setDashTitle] = useState(project.name);
   const [steps, setSteps] = useState<[StepState, StepState, StepState]>([INIT, INIT, INIT]);
   const [dashboardPath, setDashboardPath] = useState('');
+  const [yamlMode, setYamlMode] = useState(false);
 
   const setStepState = useCallback((i: 0 | 1 | 2, patch: Partial<StepState>) => {
     setSteps((prev) => {
@@ -73,6 +74,11 @@ export function PublishModal({ project, onSave, onClose }: Props) {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+      if (data.yamlMode) {
+        setYamlMode(true);
+        setStepState(2, { status: 'ok', message: 'Lovelace is in YAML mode — see instructions below.' });
+        return;
+      }
       setDashboardPath(data.dashboardPath ?? '');
       setStepState(2, { status: 'ok', message: `Dashboard "${dashTitle}" created.` });
     } catch (e) {
@@ -148,6 +154,22 @@ export function PublishModal({ project, onSave, onClose }: Props) {
           >
             Retry
           </button>
+        )}
+
+        {/* YAML mode instructions */}
+        {yamlMode && (
+          <div className="flex flex-col gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4 text-xs">
+            <p className="text-yellow-400 font-semibold">Lovelace is in YAML mode</p>
+            <p className="text-ha-muted">Add these snippets manually to your HA configuration:</p>
+            <p className="text-ha-muted mt-1">1. In <code className="text-ha-text">configuration.yaml</code>:</p>
+            <pre className="bg-ha-bg rounded-lg p-2 text-ha-text font-mono text-[10px] overflow-x-auto select-all">{`lovelace:
+  resources:
+    - url: /local/floorplan-editor-card.js
+      type: module`}</pre>
+            <p className="text-ha-muted mt-1">2. Add a new dashboard view with this card:</p>
+            <pre className="bg-ha-bg rounded-lg p-2 text-ha-text font-mono text-[10px] overflow-x-auto select-all">{`type: custom:floorplan-editor-card
+project: /local/floorplan-editor/${project.id}.json`}</pre>
+          </div>
         )}
 
         {/* Success footer */}

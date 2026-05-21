@@ -185,10 +185,19 @@ app.post('/api/addon/create-dashboard', async (req, res) => {
       headers: { Authorization: `Bearer ${SUPERVISOR_TOKEN}` },
     });
     console.log('HA resources status:', resListR.status);
+    if (resListR.status === 404) {
+      // Lovelace is in YAML mode — REST API not available
+      return res.status(200).json({
+        ok: false,
+        yamlMode: true,
+        projectId,
+        resourceUrl,
+      });
+    }
     if (!resListR.ok) {
       const body = await resListR.text();
       console.error('HA resources error:', body.slice(0, 200));
-      return res.status(502).json({ error: `HA auth failed (${resListR.status}) — check SUPERVISOR_TOKEN` });
+      return res.status(502).json({ error: `HA API error (${resListR.status})` });
     }
     const resources = await resListR.json();
     const alreadyRegistered = Array.isArray(resources) && resources.some((x) => x.url === resourceUrl);
