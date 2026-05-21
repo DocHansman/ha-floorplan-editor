@@ -1,6 +1,6 @@
 name: "Floorplan Editor"
 description: "WYSIWYG editor for HA floorplan dashboards"
-version: "0.1.3"
+version: "0.1.4"
 slug: "floorplan_editor"
 init: false
 arch:
